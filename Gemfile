@@ -22,7 +22,7 @@ gem "rack-cors"
 gem "phony_rails"
 gem "tod"
 
-gem "activeadmin"
+gem "activeadmin", "4.0.0.beta3"
 gem "sprockets-rails"
 gem "cancancan"
 gem "acts_as_list"
