@@ -11,10 +11,10 @@ ActiveAdmin.register Shop::Order do
       ]
       if params["action"].in? %W[show edit]
         links << link_to(
-          shop_order.delivery.display_name,
-          shop_orders_path(q: { _delivery_gid_eq: shop_order.delivery_gid }, scope: :all_without_cart))
+          resource.delivery.display_name,
+          shop_orders_path(q: { _delivery_gid_eq: resource.delivery_gid }, scope: :all_without_cart))
         if params["action"].in? %W[edit]
-          links << auto_link(shop_order, shop_order.id)
+          links << auto_link(resource, resource.id)
         end
       end
       links
@@ -85,60 +85,66 @@ ActiveAdmin.register Shop::Order do
 
   sidebar_shop_admin_only_warning
 
-  sidebar t("active_admin.sidebars.total"), only: :index do
-    all = collection.unscope(:includes).eager_load(:invoice).offset(nil).limit(nil)
-    div class: "content" do
-      if params[:scope].in? [ "invoiced", nil ]
-        div class: "total" do
-          span t("billing.scope.paid")
-          span cur(all.sum("invoices.paid_amount")), style: "float: right;"
-        end
-        div class: "total" do
-          span t("billing.scope.missing")
-          span cur(all.sum("invoices.amount - invoices.paid_amount")), style: "float: right"
-        end
-        div class: "totals" do
-          span t("active_admin.sidebars.amount")
-          span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
-        end
-      else
-        div do
-          span t("active_admin.sidebars.amount")
-          span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
-        end
-      end
-    end
-  end
-
-  sidebar t("active_admin.sidebars.shop_status"), if: -> { params.dig(:q, :_delivery_gid_eq).present? }, only: :index do
-    div class: "content" do
-      delivery = GlobalID::Locator.locate(params[:q][:_delivery_gid_eq])
-      if delivery == Delivery.shop_open.next
-        if delivery.shop_open?
-          span t("active_admin.sidebars.shop_open_until_html", date: l(delivery.date, format: :long), end_date: l(delivery.shop_closing_at, format: :long))
+  sidebar :total, only: :index do
+    panel t(".total") do
+      all = collection.unscope(:includes).eager_load(:invoice).offset(nil).limit(nil)
+      div class: "content" do
+        if params[:scope].in? [ "invoiced", nil ]
+          div class: "total" do
+            span t("billing.scope.paid")
+            span cur(all.sum("invoices.paid_amount")), style: "float: right;"
+          end
+          div class: "total" do
+            span t("billing.scope.missing")
+            span cur(all.sum("invoices.amount - invoices.paid_amount")), style: "float: right"
+          end
+          div class: "totals" do
+            span t("active_admin.sidebars.amount")
+            span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+          end
         else
-          span t("active_admin.sidebars.shop_closed_html", date: l(delivery.date, format: :long))
+          div do
+            span t("active_admin.sidebars.amount")
+            span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+          end
         end
-      elsif delivery.date.past?
-        span t("active_admin.sidebars.shop_closed_html", date: l(delivery.date, format: :long))
-      else
-        span t("active_admin.sidebars.shop_not_open_yet_html", date: l(delivery.date, format: :long))
       end
     end
   end
 
-  sidebar t("active_admin.sidebars.billing"), if: -> { params.dig(:q, :_delivery_gid_eq).present? }, only: :index do
-    div class: "actions" do
-      handbook_icon_link("shop", anchor: "facturation")
-    end
-
-    div class: "content" do
-      if delay = Current.acp.shop_order_automatic_invoicing_delay_in_days
+  sidebar :shop_status, if: -> { params.dig(:q, :_delivery_gid_eq).present? }, only: :index do
+    panel t(".shop_status") do
+      div class: "content" do
         delivery = GlobalID::Locator.locate(params[:q][:_delivery_gid_eq])
-        date = delivery.date + delay.days
-        span t("shop.orders_automatic_invoicing", date: l(date, format: :long))
-      else
-        span t("shop.orders_manual_invoicing")
+        if delivery == Delivery.shop_open.next
+          if delivery.shop_open?
+            span t("active_admin.sidebars.shop_open_until_html", date: l(delivery.date, format: :long), end_date: l(delivery.shop_closing_at, format: :long))
+          else
+            span t("active_admin.sidebars.shop_closed_html", date: l(delivery.date, format: :long))
+          end
+        elsif delivery.date.past?
+          span t("active_admin.sidebars.shop_closed_html", date: l(delivery.date, format: :long))
+        else
+          span t("active_admin.sidebars.shop_not_open_yet_html", date: l(delivery.date, format: :long))
+        end
+      end
+    end
+  end
+
+  sidebar :billing, if: -> { params.dig(:q, :_delivery_gid_eq).present? }, only: :index do
+    panel t(".billing") do
+      div class: "actions" do
+        handbook_icon_link("shop", anchor: "facturation")
+      end
+
+      div class: "content" do
+        if delay = Current.acp.shop_order_automatic_invoicing_delay_in_days
+          delivery = GlobalID::Locator.locate(params[:q][:_delivery_gid_eq])
+          date = delivery.date + delay.days
+          span t("shop.orders_automatic_invoicing", date: l(date, format: :long))
+        else
+          span t("shop.orders_manual_invoicing")
+        end
       end
     end
   end
@@ -169,7 +175,7 @@ ActiveAdmin.register Shop::Order do
           row(:updated_at) { l(order.updated_at, format: :long) }
         end
 
-        attributes_table title: t("billing.title") do
+        attributes_table t("billing.title") do
           if order.amount_percentage?
             row(:amount_before_percentage) { cur(order.amount_before_percentage) }
             row(:amount_percentage) { number_to_percentage(order.amount_percentage, precision: 1) }
@@ -183,7 +189,7 @@ ActiveAdmin.register Shop::Order do
           end
         end
 
-        active_admin_comments
+        active_admin_comments_for(order)
       end
     end
   end

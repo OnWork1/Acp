@@ -31,7 +31,7 @@ module AcpsHelper
         "activity_participations_annual_price_change"
       ]
       col <<  [
-        "#{activities_human_name} (#{t('active_admin.resource.edit.full_year')})",
+        "#{activities_human_name} (#{t('active_admin.resource.form.full_year')})",
         "activity_participations_demanded_annualy"
       ]
     end

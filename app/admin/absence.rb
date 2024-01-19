@@ -7,13 +7,13 @@ ActiveAdmin.register Absence do
     elsif params["action"] != "index"
       links = [
         link_to(Member.model_name.human(count: 2), members_path),
-        auto_link(absence.member),
+        auto_link(resource.member),
         link_to(
           Absence.model_name.human(count: 2),
-          absences_path(q: { member_id_eq: absence.member_id }, scope: :all))
+          absences_path(q: { member_id_eq: resource.member_id }, scope: :all))
       ]
       if params["action"].in? %W[edit]
-        links << auto_link(absence)
+        links << auto_link(resource)
       end
       links
     end
@@ -58,7 +58,7 @@ ActiveAdmin.register Absence do
       row(:ended_on) { l absence.ended_on }
     end
 
-    active_admin_comments
+    active_admin_comments_for(absence)
   end
 
   form do |f|

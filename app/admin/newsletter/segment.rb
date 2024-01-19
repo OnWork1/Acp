@@ -10,9 +10,11 @@ ActiveAdmin.register Newsletter::Segment do
     links
   end
 
-  sidebar :info do
-    div class: "content" do
-      para t("newsletters.segment.info_html")
+  sidebar :info, only: :index do
+    panel t(".info") do
+      div class: "content" do
+        para t("newsletters.segment.info_html")
+      end
     end
   end
 

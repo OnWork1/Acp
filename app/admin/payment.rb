@@ -8,13 +8,13 @@ ActiveAdmin.register Payment do
     elsif params["action"] != "index"
       links = [
         link_to(Member.model_name.human(count: 2), members_path),
-        auto_link(payment.member),
+        auto_link(resource.member),
         link_to(
           Payment.model_name.human(count: 2),
-          payments_path(q: { member_id_eq: payment.member_id }, scope: :all))
+          payments_path(q: { member_id_eq: resource.member_id }, scope: :all))
       ]
       if params["action"].in? %W[edit]
-        links << auto_link(payment)
+        links << auto_link(resource)
       end
       links
     end
@@ -62,15 +62,19 @@ ActiveAdmin.register Payment do
     collection: -> { fiscal_years_collection }
 
   sidebar :total, only: :index do
-    all = collection.unscope(:includes).offset(nil).limit(nil)
-    div class: "content" do
-      span t("active_admin.sidebars.amount")
-      span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+    panel t(".total") do
+      all = collection.unscope(:includes).offset(nil).limit(nil)
+      div class: "content" do
+        span t(".amount")
+        span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+      end
     end
   end
 
   sidebar :import, only: :index, if: -> { authorized?(:import, Payment) } do
-    render("active_admin/payments/import")
+    panel t(".import") do
+      render("active_admin/payments/import")
+    end
   end
 
   sidebar_handbook_link("billing#paiements")
@@ -98,7 +102,7 @@ ActiveAdmin.register Payment do
       end
     end
 
-    active_admin_comments
+    active_admin_comments_for(payement)
   end
 
   form do |f|

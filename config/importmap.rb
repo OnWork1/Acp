@@ -42,3 +42,8 @@ pin "@sentry-internal/tracing", to: "https://ga.jspm.io/npm:@sentry-internal/tra
 pin "@sentry/core", to: "https://ga.jspm.io/npm:@sentry/core@7.85.0/esm/index.js"
 pin "@sentry/replay", to: "https://ga.jspm.io/npm:@sentry/replay@7.85.0/esm/index.js"
 pin "@sentry/utils", to: "https://ga.jspm.io/npm:@sentry/utils@7.85.0/esm/index.js"
+
+# ActiveAdmin
+pin "flowbite", to: "https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"
+pin "@rails/ujs", to: "https://ga.jspm.io/npm:@rails/ujs@7.1.2/app/assets/javascripts/rails-ujs.esm.js", preload: true
+pin_all_from File.join(`bundle show activeadmin`.strip, "app/javascript/active_admin"), under: "active_admin", preload: true

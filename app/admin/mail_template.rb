@@ -9,7 +9,7 @@ ActiveAdmin.register MailTemplate do
     when "edit", "update"
       [
         link_to(MailTemplate.model_name.human(count: 2), mail_templates_path),
-        link_to(mail_template.display_name, mail_template)
+        link_to(resource.display_name, resource)
       ]
     end
   end

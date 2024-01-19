@@ -8,10 +8,10 @@ ActiveAdmin.register Invoice do
     elsif params["action"] != "index"
       [
         link_to(Member.model_name.human(count: 2), members_path),
-        auto_link(invoice.member),
+        auto_link(resource.member),
         link_to(
           Invoice.model_name.human(count: 2),
-          invoices_path(q: { member_id_eq: invoice.member_id }, scope: :all))
+          invoices_path(q: { member_id_eq: resource.member_id }, scope: :all))
       ]
     end
   end
@@ -82,61 +82,65 @@ ActiveAdmin.register Invoice do
   end
 
   sidebar :total, only: :index do
-    all = collection.unscope(:includes).offset(nil).limit(nil)
-    div class: "content" do
-      if Array(params.dig(:q, :entity_type_in)).include?("Membership") && Current.acp.annual_fee?
-        div class: "total" do
-          span Membership.model_name.human(count: 2)
-          span cur(all.sum(:memberships_amount)), style: "float: right"
-        end
-        div class: "total" do
-          span t("billing.annual_fees")
-          span cur(all.sum(:annual_fee)), style: "float: right;"
-        end
-        div class: "totals" do
-          span t("active_admin.sidebars.amount")
-          span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
-        end
-      elsif params[:scope].in? [ "open", "all_without_canceled", "all", "closed", nil ]
-        div class: "total" do
-          span t("billing.scope.paid") + ":"
-          span cur(all.not_canceled.sum(:paid_amount)), style: "float: right;"
-        end
-        div class: "total" do
-          amount = all.not_canceled.sum("amount - paid_amount")
-          if amount >= 0
-            span t("billing.scope.missing") + ":"
-          else
-            span t("active_admin.sidebars.overpaid")
+    panel t(".total") do
+      all = collection.unscope(:includes).offset(nil).limit(nil)
+      div class: "content" do
+        if Array(params.dig(:q, :entity_type_in)).include?("Membership") && Current.acp.annual_fee?
+          div class: "total" do
+            span Membership.model_name.human(count: 2)
+            span cur(all.sum(:memberships_amount)), style: "float: right"
           end
-          span cur(amount), style: "float: right;"
-        end
-        div class: "totals" do
-          span t("active_admin.sidebars.amount")
-          span cur(all.not_canceled.sum(:amount)), style: "float: right; font-weight: bold;"
-        end
-      else
-        div do
-          span t("active_admin.sidebars.amount")
-          span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+          div class: "total" do
+            span t("billing.annual_fees")
+            span cur(all.sum(:annual_fee)), style: "float: right;"
+          end
+          div class: "totals" do
+            span t(".amount")
+            span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+          end
+        elsif params[:scope].in? [ "open", "all_without_canceled", "all", "closed", nil ]
+          div class: "total" do
+            span t("billing.scope.paid") + ":"
+            span cur(all.not_canceled.sum(:paid_amount)), style: "float: right;"
+          end
+          div class: "total" do
+            amount = all.not_canceled.sum("amount - paid_amount")
+            if amount >= 0
+              span t("billing.scope.missing") + ":"
+            else
+              span t(".overpaid")
+            end
+            span cur(amount), style: "float: right;"
+          end
+          div class: "totals" do
+            span t(".amount")
+            span cur(all.not_canceled.sum(:amount)), style: "float: right; font-weight: bold;"
+          end
+        else
+          div do
+            span t(".amount")
+            span cur(all.sum(:amount)), style: "float: right; font-weight: bold;"
+          end
         end
       end
     end
   end
 
   sidebar :overdue_notice_not_sent_warning, only: :index, class: "warning", if: -> { !Current.acp.send_invoice_overdue_notice? } do
-    div class: "actions warning" do
-      handbook_icon_link("billing", anchor: "rappels")
-    end
+    panel t(".overdue_notice_not_sent_warning") do
+      div class: "actions warning" do
+        handbook_icon_link("billing", anchor: "rappels")
+      end
 
-    div class: "content" do
-      span t("active_admin.sidebars.overdue_notice_not_sent_warning_text_html")
+      div class: "content" do
+        span t("active_admin.sidebars.overdue_notice_not_sent_warning_text_html")
 
-      if authorized?(:create, Invoice)
-        div class: "top-spacing" do
-          button_to t(".send_overdue_notices"), send_overdue_notices_invoices_path,
-            form: { data: { controller: "disable", disable_with_value: t(".sending") } },
-            class: "full-width"
+        if authorized?(:create, Invoice)
+          div class: "top-spacing" do
+            button_to t(".send_overdue_notices"), send_overdue_notices_invoices_path,
+              form: { data: { controller: "disable", disable_with_value: t(".sending") } },
+              class: "full-width"
+          end
         end
       end
     end
@@ -176,35 +180,37 @@ ActiveAdmin.register Invoice do
       end
 
       column do
-        attributes_table do
-          row :id
-          row :member
-          row(:entity) { display_entity(invoice) }
-          if invoice.acp_share_type?
-            row(:acp_shares_number)
-          end
-          if invoice.activity_participation_type?
-            row(:paid_missing_activity_participations)
-          end
-          row(:date) { l invoice.date }
-          row(:state) { status_tag invoice.state }
-          row(:sent) { status_tag invoice.sent_at? }
-          row(:created_at) { l(invoice.created_at, format: :long) }
-          row(:created_by)
-          if invoice.sent_at?
-            row(:sent_at) { l(invoice.sent_at, format: :long) if invoice.sent_at }
-            row(:sent_by)
-          end
-          if invoice.closed?
-            row(:closed_at) { l(invoice.closed_at, format: :long) if invoice.closed_at }
-            row(:closed_by)
-          elsif invoice.canceled?
-            row(:canceled_at) { l invoice.canceled_at, format: :long }
-            row(:canceled_by)
+        panel t(".details") do
+          attributes_table do
+            row :id
+            row :member
+            row(:entity) { display_entity(invoice) }
+            if invoice.acp_share_type?
+              row(:acp_shares_number)
+            end
+            if invoice.activity_participation_type?
+              row(:paid_missing_activity_participations)
+            end
+            row(:date) { l invoice.date }
+            row(:state) { status_tag invoice.state }
+            row(:sent) { status_tag invoice.sent_at? }
+            row(:created_at) { l(invoice.created_at, format: :long) }
+            row(:created_by)
+            if invoice.sent_at?
+              row(:sent_at) { l(invoice.sent_at, format: :long) if invoice.sent_at }
+              row(:sent_by)
+            end
+            if invoice.closed?
+              row(:closed_at) { l(invoice.closed_at, format: :long) if invoice.closed_at }
+              row(:closed_by)
+            elsif invoice.canceled?
+              row(:canceled_at) { l invoice.canceled_at, format: :long }
+              row(:canceled_by)
+            end
           end
         end
 
-        attributes_table title: Invoice.human_attribute_name(:amount) do
+        attributes_table Invoice.human_attribute_name(:amount) do
           if invoice.amount_percentage?
             row(:amount_before_percentage) { cur(invoice.amount_before_percentage) }
             row(:amount_percentage) { number_to_percentage(invoice.amount_percentage, precision: 1) }
@@ -214,35 +220,35 @@ ActiveAdmin.register Invoice do
           row(:balance) { cur(invoice.balance) }
         end
 
-        attributes_table title: Invoice.human_attribute_name(:overdue_notices_count) do
+        attributes_table Invoice.human_attribute_name(:overdue_notices_count) do
           row :overdue_notices_count
           row(:overdue_notice_sent_at) { l invoice.overdue_notice_sent_at if invoice.overdue_notice_sent_at }
         end
 
-        active_admin_comments
+        active_admin_comments_for(invoice)
       end
     end
   end
 
-  action_item :cancel_and_edit_shop_order, only: :show, if: -> { invoice.shop_order_type? && authorized?(:cancel, invoice.entity) } do
-    button_to t(".cancel_and_edit_shop_order"), cancel_shop_order_path(invoice.entity),
+  action_item :cancel_and_edit_shop_order, only: :show, if: -> { resource.shop_order_type? && authorized?(:cancel, resource.entity) } do
+    button_to t(".cancel_and_edit_shop_order"), cancel_shop_order_path(resource.entity),
       form: { data: { controller: "disable", disable_with_value: t("formtastic.processing") } },
       data: { confirm: t(".cancel_action_confirm") }
   end
 
-  action_item :pdf, only: :show, if: -> { !invoice.processing? } do
+  action_item :pdf, only: :show, if: -> { !resource.processing? } do
     link_to_invoice_pdf(resource)
   end
 
   action_item :new_payment, only: :show, if: -> { authorized?(:create, Payment) } do
     link_to t(".new_payment"), new_payment_path(
-      invoice_id: invoice.id, amount: [ invoice.amount, invoice.missing_amount ].min)
+      invoice_id: resource.id, amount: [ resource.amount, resource.missing_amount ].min)
   end
 
-  action_item :refund, only: :show, if: -> { invoice.can_refund? } do
-    acp_shares_number = [ invoice.acp_shares_number, invoice.member.acp_shares_number ].min
+  action_item :refund, only: :show, if: -> { resource.can_refund? } do
+    acp_shares_number = [ resource.acp_shares_number, resource.member.acp_shares_number ].min
     link_to t(".refund"),
-      new_invoice_path(member_id: invoice.member_id, acp_shares_number: -acp_shares_number, anchor: "acp_share")
+      new_invoice_path(member_id: resource.member_id, acp_shares_number: -acp_shares_number, anchor: "acp_share")
   end
 
   action_item :send_email, only: :show, if: -> { authorized?(:send_email, resource) } do

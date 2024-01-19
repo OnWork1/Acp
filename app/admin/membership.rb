@@ -7,13 +7,13 @@ ActiveAdmin.register Membership do
     elsif params["action"] != "index"
       links = [
         link_to(Member.model_name.human(count: 2), members_path),
-        auto_link(membership.member),
+        auto_link(resource.member),
         link_to(
           Membership.model_name.human(count: 2),
-          memberships_path(q: { member_id_eq: membership.member_id }, scope: :all))
+          memberships_path(q: { member_id_eq: resource.member_id }, scope: :all))
       ]
       if params["action"].in? %W[edit]
-        links << auto_link(membership)
+        links << auto_link(resource)
       end
       links
     end
@@ -73,130 +73,127 @@ ActiveAdmin.register Membership do
     end
     column :baskets_count,
       ->(m) { auto_link m, "#{m.delivered_baskets_count} / #{m.baskets_count}" }
-    actions defaults: false, class: "col-actions-2" do |resource|
-      localizer = ActiveAdmin::Localizers.resource(active_admin_config)
-      if authorized?(ActiveAdmin::Auth::READ, resource)
-        item localizer.t(:view), resource_path(resource), class: "view_link member_link", title: localizer.t(:view)
-      end
-      if authorized?(ActiveAdmin::Auth::UPDATE, resource)
-        item localizer.t(:edit), edit_resource_path(resource), class: "edit_link member_link", title: localizer.t(:edit)
-      end
-    end
+    actions
   end
 
   sidebar :renewal, only: :index do
-    div class: "actions" do
-      handbook_icon_link("membership_renewal")
-    end
-
-    renewal = MembershipsRenewal.new
-    if !Delivery.any_next_year?
-      div class: "content" do
-        t(".no_next_year_deliveries",
-          fiscal_year: renewal.next_fy,
-          new_delivery_path: new_delivery_path).html_safe
+    panel t(".renewal") do
+      div class: "actions" do
+        handbook_icon_link("membership_renewal")
       end
-    else
-      div class: "content" do
-        ul do
-          li do
-            openable_count = renewal.openable.count
-            t(".openable_renewals",
-              count: openable_count,
-              count_link: link_to(
-                openable_count,
-                collection_path(scope: :all, q: { renewal_state_eq: :renewal_pending, during_year: Current.acp.current_fiscal_year.year }))
-            ).html_safe
-          end
-          if MailTemplate.active_template(:membership_renewal)
+
+      renewal = MembershipsRenewal.new
+      if !Delivery.any_next_year?
+        div class: "content" do
+          t(".no_next_year_deliveries",
+            fiscal_year: renewal.next_fy,
+            new_delivery_path: new_delivery_path).html_safe
+        end
+      else
+        div class: "content" do
+          ul do
             li do
-              renewal_opened_count = renewal.opened.count
-              t(".opened_renewals",
-                count: renewal_opened_count,
+              openable_count = renewal.openable.count
+              t(".openable_renewals",
+                count: openable_count,
                 count_link: link_to(
-                  renewal_opened_count,
-                  collection_path(scope: :all, q: { renewal_state_eq: :renewal_opened, during_year: Current.acp.current_fiscal_year.year }))
+                  openable_count,
+                  collection_path(scope: :all, q: { renewal_state_eq: :renewal_pending, during_year: Current.acp.current_fiscal_year.year }))
+              ).html_safe
+            end
+            if MailTemplate.active_template(:membership_renewal)
+              li do
+                renewal_opened_count = renewal.opened.count
+                t(".opened_renewals",
+                  count: renewal_opened_count,
+                  count_link: link_to(
+                    renewal_opened_count,
+                    collection_path(scope: :all, q: { renewal_state_eq: :renewal_opened, during_year: Current.acp.current_fiscal_year.year }))
+                ).html_safe
+              end
+            end
+            li do
+              renewed_count = renewal.renewed.count
+              t(".renewed_renewals",
+                count: renewed_count,
+                count_link: link_to(
+                  renewed_count,
+                  collection_path(scope: :all, q: { renewal_state_eq: :renewed, during_year: Current.acp.current_fiscal_year.year }))
+              ).html_safe
+            end
+            li do
+              end_of_year = Current.acp.current_fiscal_year.end_of_year
+              renewal_canceled_count = Membership.where(renew: false).where(ended_on: end_of_year).count
+              t(".canceled_renewals",
+                count: renewal_canceled_count,
+                count_link: link_to(
+                  renewal_canceled_count,
+                  collection_path(scope: :all, q: { renewal_state_eq: :renewal_canceled, during_year: Current.acp.current_fiscal_year.year, ended_on_gteq: end_of_year, ended_on_lteq: end_of_year }))
               ).html_safe
             end
           end
-          li do
-            renewed_count = renewal.renewed.count
-            t(".renewed_renewals",
-              count: renewed_count,
-              count_link: link_to(
-                renewed_count,
-                collection_path(scope: :all, q: { renewal_state_eq: :renewed, during_year: Current.acp.current_fiscal_year.year }))
-            ).html_safe
-          end
-          li do
-            end_of_year = Current.acp.current_fiscal_year.end_of_year
-            renewal_canceled_count = Membership.where(renew: false).where(ended_on: end_of_year).count
-            t(".canceled_renewals",
-              count: renewal_canceled_count,
-              count_link: link_to(
-                renewal_canceled_count,
-                collection_path(scope: :all, q: { renewal_state_eq: :renewal_canceled, during_year: Current.acp.current_fiscal_year.year, ended_on_gteq: end_of_year, ended_on_lteq: end_of_year }))
-            ).html_safe
-          end
         end
-      end
-      renewable_count = renewal.renewable.count
-      if renewable_count.positive?
-        div class: "content top-spacing" do
-          if renewal.renewing?
-            span { t(".renewing") }
-          elsif renewal.opening?
-            span { t(".opening") }
-          else
-            if authorized?(:open_renewal_all, Membership) && MailTemplate.active_template(:membership_renewal)
-              openable_count = renewal.openable.count
-              if openable_count.positive?
+        renewable_count = renewal.renewable.count
+        if renewable_count.positive?
+          div class: "content top-spacing" do
+            if renewal.renewing?
+              span { t(".renewing") }
+            elsif renewal.opening?
+              span { t(".opening") }
+            else
+              if authorized?(:open_renewal_all, Membership) && MailTemplate.active_template(:membership_renewal)
+                openable_count = renewal.openable.count
+                if openable_count.positive?
+                  div class: "top-small-spacing" do
+                    button_to t(".open_renewal_all_action", count: openable_count), open_renewal_all_memberships_path,
+                      form: { data: { controller: "disable", disable_with_value: t(".opening") } },
+                      class: "full-width"
+                  end
+                end
+              end
+              if authorized?(:renew_all, Membership)
                 div class: "top-small-spacing" do
-                  button_to t(".open_renewal_all_action", count: openable_count), open_renewal_all_memberships_path,
-                    form: { data: { controller: "disable", disable_with_value: t(".opening") } },
+                  button_to t(".renew_all_action", count: renewable_count), renew_all_memberships_path,
+                    form: { data: { controller: "disable", disable_with_value: t(".renewing") } },
                     class: "full-width"
                 end
               end
             end
-            if authorized?(:renew_all, Membership)
-              div class: "top-small-spacing" do
-                button_to t(".renew_all_action", count: renewable_count), renew_all_memberships_path,
-                  form: { data: { controller: "disable", disable_with_value: t(".renewing") } },
-                  class: "full-width"
-              end
-            end
           end
         end
       end
     end
   end
 
-  sidebar :basket_price_extra_title, only: :index, if: -> { Current.acp.feature?("basket_price_extra") && params.dig(:q, :during_year).present? } do
-    div class: "actions" do
-      handbook_icon_link("basket_price_extra")
-    end
 
-    coll =
-      collection.unscope(:includes, :joins, :order)
-      .limit(nil)
-      .joins(:member)
-      .merge(Member.no_salary_basket)
-    baskets = Basket.billable.where(membership: coll)
-    div class: "content" do
-      if coll.where("basket_price_extra < 0").any?
-        div class: "total" do
-          sum = baskets.where("price_extra > 0").sum("quantity * price_extra")
-          span cur(sum), style: "text-align: right; display: inline-block; width: 100%;"
-        end
-        div class: "total" do
-          sum = baskets.where("price_extra < 0").sum("quantity * price_extra")
-          span cur(sum), style: "text-align: right; display: inline-block; width: 100%;"
-        end
+  sidebar :basket_price_extra_total, only: :index, if: -> { Current.acp.feature?("basket_price_extra") && params.dig(:q, :during_year).present? } do
+    panel Current.acp.basket_price_extra_title do
+      div class: "actions" do
+        handbook_icon_link("basket_price_extra")
       end
-      div class: "totals" do
-        sum = baskets.sum("quantity * price_extra")
-        span t("active_admin.sidebars.amount")
-        span cur(sum), style: "float: right; font-weight: bold;"
+
+      coll =
+        collection.unscope(:includes, :joins, :order)
+        .limit(nil)
+        .joins(:member)
+        .merge(Member.no_salary_basket)
+      baskets = Basket.billable.where(membership: coll)
+      div class: "content" do
+        if coll.where("basket_price_extra < 0").any?
+          div class: "total" do
+            sum = baskets.where("price_extra > 0").sum("quantity * price_extra")
+            span cur(sum), style: "text-align: right; display: inline-block; width: 100%;"
+          end
+          div class: "total" do
+            sum = baskets.where("price_extra < 0").sum("quantity * price_extra")
+            span cur(sum), style: "text-align: right; display: inline-block; width: 100%;"
+          end
+        end
+        div class: "totals" do
+          sum = baskets.sum("quantity * price_extra")
+          span t(".amount")
+          span cur(sum), style: "float: right; font-weight: bold;"
+        end
       end
     end
   end
@@ -319,7 +316,7 @@ ActiveAdmin.register Membership do
           row(:created_at) { l m.created_at, format: :long }
         end
 
-        attributes_table title: t(".config") do
+        attributes_table t(".config") do
           row(:basket_size) { basket_size_description(m, text_only: true, public_name: false) }
           if BasketComplement.any?
             row(:memberships_basket_complements) {
@@ -332,7 +329,7 @@ ActiveAdmin.register Membership do
         end
 
         if Current.fiscal_year >= m.fiscal_year
-          attributes_table title: Membership.human_attribute_name(:renew) do
+          attributes_table Membership.human_attribute_name(:renew) do
             div class: "actions" do
               handbook_icon_link("membership_renewal")
             end
@@ -429,7 +426,7 @@ ActiveAdmin.register Membership do
         end
 
         if Current.acp.feature?("activity")
-          attributes_table title: activities_human_name do
+          attributes_table activities_human_name do
             row(:activity_participations_demanded) { m.activity_participations_demanded }
             row(:activity_participations_future) {
               link_to(
@@ -475,7 +472,7 @@ ActiveAdmin.register Membership do
           end
         end
 
-        attributes_table title: t(".billing") do
+        attributes_table t(".billing") do
           div class: "actions" do
             handbook_icon_link("billing", anchor: "abonnements")
           end
@@ -551,7 +548,7 @@ ActiveAdmin.register Membership do
           end
         end
 
-        active_admin_comments
+        active_admin_comments_for(m)
       end
     end
   end

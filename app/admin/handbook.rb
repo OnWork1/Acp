@@ -12,28 +12,30 @@ ActiveAdmin.register_page "Handbook" do
     end
   end
 
-  sidebar :pages do
-    ul class: "handbook-toc" do
-      Handbook.all(binding).each do |handbook|
-        li class: (handbook.name == params[:id] ? "active" : "") do
-          if handbook.name == params[:id]
-            span class: "active" do
-              span inline_svg_tag("admin/chevron-down.svg", size: "12")
-              span handbook.title
-            end
-            ul do
-              handbook.subtitles.each do |subtitle, id|
-                li do
-                  a href: handbook_page_path(handbook.name, anchor: id) do
-                    span subtitle
+  sidebar :pages, only: :index do
+    panel t(".pages") do
+      ul class: "handbook-toc" do
+        Handbook.all(binding).each do |handbook|
+          li class: (handbook.name == params[:id] ? "active" : "") do
+            if handbook.name == params[:id]
+              span class: "active" do
+                span inline_svg_tag("admin/chevron-down.svg", size: "12")
+                span handbook.title
+              end
+              ul do
+                handbook.subtitles.each do |subtitle, id|
+                  li do
+                    a href: handbook_page_path(handbook.name, anchor: id) do
+                      span subtitle
+                    end
                   end
                 end
               end
-            end
-          else
-            a href: handbook_page_path(handbook.name) do
-              span inline_svg_tag("admin/chevron-right.svg", size: "12")
-              span handbook.title
+            else
+              a href: handbook_page_path(handbook.name) do
+                span inline_svg_tag("admin/chevron-right.svg", size: "12")
+                span handbook.title
+              end
             end
           end
         end
@@ -42,8 +44,10 @@ ActiveAdmin.register_page "Handbook" do
   end
 
   sidebar :help, if: -> { params[:id] } do
-    div class: "content" do
-      para t(".handbook_questions_html")
+    panel t(".help") do
+      div class: "content" do
+        para t("active_admin.page.index.handbook_questions_html")
+      end
     end
   end
 

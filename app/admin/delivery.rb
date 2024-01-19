@@ -115,7 +115,7 @@ ActiveAdmin.register Delivery do
         end
 
         if Current.acp.feature?("shop")
-          attributes_table title: t("shop.title") do
+          attributes_table t("shop.title") do
             row(t("shop.open")) { status_tag(delivery.shop_open?) }
             if delivery.shop_open
               row(:depots) { display_depots(delivery.shop_open_for_depots) }
@@ -142,7 +142,7 @@ ActiveAdmin.register Delivery do
           end
         end
 
-        active_admin_comments
+        active_admin_comments_for(delivery)
       end
     end
   end

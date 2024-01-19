@@ -7,7 +7,7 @@ ActiveAdmin.register Activity do
     unless params["action"] == "index"
       links << link_to(Activity.model_name.human(count: 2), activities_path)
       if params["action"].in? %W[edit]
-        links << activity.name
+        links << resource.name
       end
     end
     links

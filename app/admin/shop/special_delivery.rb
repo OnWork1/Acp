@@ -11,7 +11,7 @@ ActiveAdmin.register Shop::SpecialDelivery do
         link_to(Shop::SpecialDelivery.model_name.human(count: 2), shop_special_deliveries_path)
       ]
       if params["action"].in? %W[edit]
-        links << I18n.l(shop_special_delivery.date)
+        links << I18n.l(resource.date)
       end
       links
     end
@@ -108,7 +108,7 @@ ActiveAdmin.register Shop::SpecialDelivery do
             para(class: "empty") { t("active_admin.empty") }
           end
         end
-        active_admin_comments
+        active_admin_comments_for(delivery)
       end
     end
   end

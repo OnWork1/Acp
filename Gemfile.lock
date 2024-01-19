@@ -51,7 +51,7 @@ GEM
       erubi (~> 1.11)
       rails-dom-testing (~> 2.2)
       rails-html-sanitizer (~> 1.6)
-    activeadmin (4.0.0.beta3)
+    activeadmin (4.0.0.beta4)
       arbre (~> 2.0)
       formtastic (>= 3.1)
       formtastic_i18n (>= 0.4)
@@ -545,9 +545,6 @@ GEM
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
-    turbolinks (5.2.1)
-      turbolinks-source (~> 5.2)
-    turbolinks-source (5.2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unaccent (0.4.0)
@@ -574,7 +571,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  activeadmin (= 4.0.0.beta3)
+  activeadmin (= 4.0.0.beta4)
   activejob-uniqueness
   acts_as_list
   aws-sdk-s3
@@ -646,7 +643,6 @@ DEPENDENCIES
   test-prof
   tod
   turbo-rails
-  turbolinks
   web-console
 
 RUBY VERSION

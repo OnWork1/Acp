@@ -22,7 +22,7 @@ gem "rack-cors"
 gem "phony_rails"
 gem "tod"
 
-gem "activeadmin", "4.0.0.beta3"
+gem "activeadmin", "4.0.0.beta4"
 gem "sprockets-rails"
 gem "cancancan"
 gem "acts_as_list"
@@ -31,9 +31,6 @@ gem "simple_form"
 gem "inline_svg"
 gem "slim"
 
-# Admin section
-gem "turbolinks"
-# Members section
 gem "importmap-rails", "~> 1.2"
 gem "turbo-rails"
 gem "stimulus-rails"

@@ -1,0 +1,18 @@
+/* Sprockets requires
+*= require actiontext
+*= require admin/select_tags
+*= require admin/emoji_button
+*= require admin/updates
+*= require admin/tooltip
+*= require admin/note_icon
+*= require admin/link_with_session
+*= require_self
+*/
+
+/* #filters_sidebar_section input.datepicker {
+  font-size: 0.8rem !important;
+} */
+
+.filters-form-submit {
+  display: none !important;
+}

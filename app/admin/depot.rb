@@ -121,11 +121,11 @@ ActiveAdmin.register Depot do
           row(:public_note) { depot.public_note if depot.public_note? }
         end
 
-        attributes_table title: Delivery.human_attribute_name(:sheets_pdf) do
+        attributes_table Delivery.human_attribute_name(:sheets_pdf) do
           row(:delivery_sheets_mode) { t("delivery.sheets_mode.#{depot.delivery_sheets_mode}") }
         end
 
-        attributes_table title: t(".member_new_form") do
+        attributes_table t(".member_new_form") do
           row :visible
           if DeliveryCycle.visible?
             table_for depot.delivery_cycles, class: "delivery_cycles" do
@@ -140,14 +140,14 @@ ActiveAdmin.register Depot do
           end
         end
 
-        attributes_table title: Depot.human_attribute_name(:address) do
+        attributes_table Depot.human_attribute_name(:address) do
           row :address_name
           row :address
           row :zip
           row :city
         end
 
-        attributes_table title: Depot.human_attribute_name(:contact) do
+        attributes_table Depot.human_attribute_name(:contact) do
           row :contact_name
           row(:emails) { display_emails_with_link(self, depot.emails_array) }
           row(:phones) { display_phones_with_link(self, depot.phones_array) }

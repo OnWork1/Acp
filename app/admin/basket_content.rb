@@ -75,7 +75,7 @@ ActiveAdmin.register BasketContent do
   end
 
   action_item :product, only: :index do
-    link_to BasketContent::Product.model_name.human(count: 2), basket_content_products_path
+    link_to BasketContent::Product.model_name.human(count: 2), basket_content_products_path, class: "action-item-button"
   end
 
   csv do
@@ -111,9 +111,11 @@ ActiveAdmin.register BasketContent do
       (delivery = Delivery.find(params.dig(:q, :delivery_id_eq))) &&
       BasketContent.coming_unfilled_deliveries(after_date: delivery.date).any?
   } do
-    delivery = Delivery.find(params.dig(:q, :delivery_id_eq))
-    render partial: "active_admin/basket_contents/duplicate_all_to",
-      locals: { from_delivery: delivery }
+    panel t(".duplicate_all_to") do
+      delivery = Delivery.find(params.dig(:q, :delivery_id_eq))
+      render partial: "active_admin/basket_contents/duplicate_all_to",
+        locals: { from_delivery: delivery }
+    end
   end
 
   sidebar :duplicate_all_from, only: :index, if: -> {
@@ -122,9 +124,11 @@ ActiveAdmin.register BasketContent do
       collection.empty? &&
       BasketContent.any?
   } do
-    delivery = Delivery.find(params.dig(:q, :delivery_id_eq))
-    render partial: "active_admin/basket_contents/duplicate_all_from",
-      locals: { to_delivery: delivery }
+    panel t(".duplicate_all_from") do
+      delivery = Delivery.find(params.dig(:q, :delivery_id_eq))
+      render partial: "active_admin/basket_contents/duplicate_all_from",
+        locals: { to_delivery: delivery }
+    end
   end
 
   collection_action :duplicate_all, method: :post do

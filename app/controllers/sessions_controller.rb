@@ -1,8 +1,9 @@
 require "bcrypt"
 
 class SessionsController < ApplicationController
-  helper ActiveAdmin::ViewHelpers
-  layout false
+  # helper ActiveAdmin::ViewHelpers
+  helper ActiveAdmin::LayoutHelper
+  layout "active_admin_logged_out"
 
   # GET /login
   def new

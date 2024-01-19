@@ -7,12 +7,12 @@ ActiveAdmin.register ActivityParticipation do
       links << link_to(ActivityParticipation.model_name.human(count: 2), activity_participations_path)
     elsif params["action"] != "index"
       links << link_to(Activity.model_name.human(count: 2), activities_path)
-      links << auto_link(activity_participation.activity)
+      links << auto_link(resource.activity)
       links << link_to(
         ActivityParticipation.model_name.human(count: 2),
-        activity_participations_path(q: { activity_id_eq: activity_participation.activity_id }, scope: :all))
+        activity_participations_path(q: { activity_id_eq: resource.activity_id }, scope: :all))
       if params["action"].in? %W[edit]
-        links << auto_link(activity_participation)
+        links << auto_link(resource)
       end
     end
     links
@@ -75,44 +75,48 @@ ActiveAdmin.register ActivityParticipation do
   end
 
   sidebar :total, only: :index do
-    all = collection.unscope(:includes).offset(nil).limit(nil)
-    div class: "content" do
-      div class: "total" do
-        span activities_human_name + ":"
-        span all.sum(:participants_count), style: "float: right; font-weight: bold;"
+    panel t(".total") do
+      all = collection.unscope(:includes).offset(nil).limit(nil)
+      div class: "content" do
+        div class: "total" do
+          span activities_human_name + ":"
+          span all.sum(:participants_count), style: "float: right; font-weight: bold;"
+        end
       end
     end
   end
 
   sidebar :billing, only: :index, if: -> { Current.acp.activity_price.positive? } do
-    div class: "actions" do
-      handbook_icon_link("billing", anchor: "activity")
-    end
+    panel t(".billing") do
+      div class: "actions" do
+        handbook_icon_link("billing", anchor: "activity")
+      end
 
-    div class: "content" do
-      no_counts = true
-      [ Current.fy_year - 1, Current.fy_year ].each do |year|
-        fy = Current.acp.fiscal_year_for(year)
-        missing_count = Membership.during_year(fy).sum(&:missing_activity_participations)
-        if missing_count.positive?
-          no_counts = false
-          div class: "top-spacing" do
-            span t(".missing_activity_participations_count_html", year: fy.to_s, count: missing_count)
-          end
-          if authorized?(:invoice_all, ActivityParticipation)
-            div class: "top-small-spacing" do
-              button_to t(".invoice_all"), invoice_all_activity_participations_path,
-                params: { year: fy.year },
-                form: { data: { controller: "disable", disable_with_value: t(".invoicing") } },
-                data: { confirm: t(".invoice_all_confirm", year: fy.to_s, count: missing_count, activity_price: cur(Current.acp.activity_price)) },
-                class: "full-width"
+      div class: "content" do
+        no_counts = true
+        [ Current.fy_year - 1, Current.fy_year ].each do |year|
+          fy = Current.acp.fiscal_year_for(year)
+          missing_count = Membership.during_year(fy).sum(&:missing_activity_participations)
+          if missing_count.positive?
+            no_counts = false
+            div class: "top-spacing" do
+              span t(".missing_activity_participations_count_html", year: fy.to_s, count: missing_count)
+            end
+            if authorized?(:invoice_all, ActivityParticipation)
+              div class: "top-small-spacing" do
+                button_to t(".invoice_all"), invoice_all_activity_participations_path,
+                  params: { year: fy.year },
+                  form: { data: { controller: "disable", disable_with_value: t(".invoicing") } },
+                  data: { confirm: t(".invoice_all_confirm", year: fy.to_s, count: missing_count, activity_price: cur(Current.acp.activity_price)) },
+                  class: "full-width"
+              end
             end
           end
         end
-      end
-      if no_counts
-        div class: "content" do
-          span t(".no_missing_activity_participations"), class: "empty"
+        if no_counts
+          div class: "content" do
+            span t(".no_missing_activity_participations"), class: "empty"
+          end
         end
       end
     end
@@ -125,12 +129,14 @@ ActiveAdmin.register ActivityParticipation do
   end
 
   sidebar :calendar, if: -> { Current.acp.icalendar_auth_token? }, only: :index do
-    div class: "content" do
-      para t(".activity_participation_ical_text_html")
-      div do
-        link_to t(".subscribe_ical_link"), activity_participations_calendar_url(auth_token: Current.acp.icalendar_auth_token).gsub(/^https/, "webcal"),
-          data: { turbolinks: false },
-          class: "button full-width"
+    panel t(".calendar") do
+      div class: "content" do
+        para t(".activity_participation_ical_text_html")
+        div do
+          link_to t(".subscribe_ical_link"), activity_participations_calendar_url(auth_token: Current.acp.icalendar_auth_token).gsub(/^https/, "webcal"),
+            data: { turbolinks: false },
+            class: "button full-width"
+        end
       end
     end
   end
@@ -158,7 +164,7 @@ ActiveAdmin.register ActivityParticipation do
   show do |ap|
     columns do
       column do
-        attributes_table title: ActivityParticipation.human_attribute_name(:contact) do
+        attributes_table ActivityParticipation.human_attribute_name(:contact) do
           row :member
           row(:email) { display_emails_with_link(self, ap.emails) }
           row(:phones) { display_phones_with_link(self, ap.member.phones_array) }
@@ -169,7 +175,7 @@ ActiveAdmin.register ActivityParticipation do
         end
 
         if ap.invoices.any?
-          attributes_table title: t(".billing") do
+          attributes_table t(".billing") do
             row(:invoiced_at) { auto_link ap.invoices.first, l(ap.invoices.first.date) }
           end
         end
@@ -185,7 +191,7 @@ ActiveAdmin.register ActivityParticipation do
 
 
         if ap.validated? || ap.rejected?
-          attributes_table title: ActivityParticipation.human_attribute_name(:state) do
+          attributes_table ActivityParticipation.human_attribute_name(:state) do
             row(:status) { status_tag ap.state, label: ap.state_i18n_name }
             row :validator
             if ap.validated?
@@ -197,7 +203,7 @@ ActiveAdmin.register ActivityParticipation do
           end
         end
 
-        active_admin_comments
+        active_admin_comments_for(ap)
       end
     end
   end

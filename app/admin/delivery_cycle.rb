@@ -67,7 +67,7 @@ ActiveAdmin.register DeliveryCycle do
         end
 
         if DeliveryCycle.visible?
-          attributes_table title: t(".member_new_form") do
+          attributes_table t(".member_new_form") do
             row(:visible) { status_tag(dc.visible?) }
             if dc.visible?
               table_for dc.depots, class: "depots" do
@@ -78,7 +78,7 @@ ActiveAdmin.register DeliveryCycle do
           end
         end
 
-        attributes_table title: t("delivery_cycle.settings") do
+        attributes_table t("delivery_cycle.settings") do
           row(:wdays) {
             if dc.wdays.size == 7
               t("active_admin.scopes.all")
@@ -98,7 +98,7 @@ ActiveAdmin.register DeliveryCycle do
           row(:minimum_gap_in_days) { dc.minimum_gap_in_days }
         end
 
-        active_admin_comments
+        active_admin_comments_for(dc)
       end
     end
   end

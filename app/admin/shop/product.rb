@@ -11,7 +11,7 @@ ActiveAdmin.register Shop::Product do
         link_to(Shop::Product.model_name.human(count: 2), shop_products_path)
       ]
       if params["action"].in? %W[edit]
-        links << shop_product.name
+        links << resource.name
       end
       links
     end

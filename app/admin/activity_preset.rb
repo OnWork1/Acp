@@ -10,7 +10,7 @@ ActiveAdmin.register ActivityPreset do
     unless params["action"] == "index"
       links << link_to(ActivityPreset.model_name.human(count: 2), activity_presets_path)
       if params["action"].in? %W[edit]
-        links << activity_preset.name
+        links << resource.name
       end
     end
     links

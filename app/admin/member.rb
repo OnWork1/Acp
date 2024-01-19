@@ -77,15 +77,7 @@ ActiveAdmin.register Member do
       column :city, ->(member) { member.city? ? "#{member.city} (#{member.zip})" : "–" }
     end
     column :state, ->(member) { status_tag(member.state) }
-    actions defaults: false, class: "col-actions-2" do |resource|
-      localizer = ActiveAdmin::Localizers.resource(active_admin_config)
-      if authorized?(ActiveAdmin::Auth::READ, resource)
-        item localizer.t(:view), resource_path(resource), class: "view_link member_link", title: localizer.t(:view)
-      end
-      if authorized?(ActiveAdmin::Auth::UPDATE, resource)
-        item localizer.t(:edit), edit_resource_path(resource), class: "edit_link member_link", title: localizer.t(:edit)
-      end
-    end
+    actions
   end
 
   csv do
@@ -157,29 +149,31 @@ ActiveAdmin.register Member do
     columns do
       column do
         if next_basket = member.next_basket
-          attributes_table title: link_to(Member.human_attribute_name(:next_basket), next_basket.membership) do
-            if next_basket.trial?
-              row(:state) { status_tag(:trial) }
+          panel link_to(Member.human_attribute_name(:next_basket), next_basket.membership).html_safe do
+            attributes_table do
+              if next_basket.trial?
+                row(:state) { status_tag(:trial) }
+              end
+              row(:basket_size) { basket_size_description(member.next_basket, text_only: true, public_name: false) }
+              if BasketComplement.any?
+                row(Membership.human_attribute_name(:memberships_basket_complements)) {
+                  basket_complements_description(member.next_basket.baskets_basket_complements, text_only: true, public_name: false)
+                }
+              end
+              row(:depot) { link_to next_basket.depot.name, next_basket.depot  }
+              row(:delivery) { link_to next_basket.delivery.display_name(format: :long), next_basket.delivery }
+              if Current.acp.feature?("shop")
+                shop_order = next_basket.delivery.shop_orders.all_without_cart.find_by(member_id: member.id)
+                row(t("shop.title")) { auto_link shop_order }
+              end
+              row(:delivery_cycle) { auto_link next_basket.membership.delivery_cycle }
+              row(:membership) { link_to "##{next_basket.membership.id} (#{next_basket.membership.fiscal_year})", next_basket.membership }
             end
-            row(:basket_size) { basket_size_description(member.next_basket, text_only: true, public_name: false) }
-            if BasketComplement.any?
-              row(Membership.human_attribute_name(:memberships_basket_complements)) {
-                basket_complements_description(member.next_basket.baskets_basket_complements, text_only: true, public_name: false)
-              }
-            end
-            row(:depot) { link_to next_basket.depot.name, next_basket.depot  }
-            row(:delivery) { link_to next_basket.delivery.display_name(format: :long), next_basket.delivery }
-            if Current.acp.feature?("shop")
-              shop_order = next_basket.delivery.shop_orders.all_without_cart.find_by(member_id: member.id)
-              row(t("shop.title")) { auto_link shop_order }
-            end
-            row(:delivery_cycle) { auto_link next_basket.membership.delivery_cycle }
-            row(:membership) { link_to "##{next_basket.membership.id} (#{next_basket.membership.fiscal_year})", next_basket.membership }
           end
         end
 
         if member.pending? || member.waiting?
-          attributes_table title: t(".waiting_membership") do
+          attributes_table t(".waiting_membership") do
             row(:basket_size) { member.waiting_basket_size&.name }
             if Current.acp.feature?("basket_price_extra")
               row(Current.acp.basket_price_extra_title) { cur(member.waiting_basket_price_extra) }
@@ -356,11 +350,11 @@ ActiveAdmin.register Member do
           row :validator
         end
         if Current.acp.feature?("shop") && member.use_shop_depot?
-          attributes_table title: t("shop.title") do
+          attributes_table t("shop.title") do
             row(:depot) { member.shop_depot }
           end
         end
-        attributes_table title: Member.human_attribute_name(:contact) do
+        attributes_table Member.human_attribute_name(:contact) do
           row :name
           row(Member.human_attribute_name(:address)) { member.display_address }
           unless member.same_delivery_address?
@@ -375,7 +369,7 @@ ActiveAdmin.register Member do
             row(:contact_sharing) { status_tag(member.contact_sharing) }
           end
         end
-        attributes_table title: t(".billing") do
+        attributes_table t(".billing") do
           div class: "actions" do
             handbook_icon_link("billing")
           end
@@ -436,7 +430,7 @@ ActiveAdmin.register Member do
             end
           }
         end
-        attributes_table title: t(".notes") do
+        attributes_table t(".notes") do
           row :profession
           row(:come_from) { text_format(member.come_from) }
           row :delivery_note
@@ -444,7 +438,7 @@ ActiveAdmin.register Member do
           row(:note) { text_format(member.note) }
         end
 
-        active_admin_comments
+        active_admin_comments_for(member)
       end
     end
   end
